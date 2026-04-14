@@ -4,6 +4,8 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -105,7 +107,8 @@ public class TCPServer {
 
                         } else {
                             // herkese yolla
-                            broadcast(userName + ": " + mesaj);
+                            String zaman = LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss dd/MM/yyyy"));
+                            broadcast("[" + zaman + "] " + userName + ": " + mesaj);
                         }
 
                     }
