@@ -40,9 +40,13 @@ public class TCPClient {
                             System.exit(0);
                         }
 
-                        // eger sistem mesajiysa SYS| kismini temizleyip yazdirmak gerekir
                         if (serverResponse.startsWith("SYS|")) {
-                            System.out.println(">> Sistem :" + serverResponse.substring(4));
+                            System.out.println(">> Sistem: " + serverResponse.substring(4));
+                        } else if (serverResponse.startsWith("USERLIST|")) {
+                            String[] kullanicilar = serverResponse.substring(9).split(",");
+                            System.out.println("--- Cevrimici Kullanicilar (" + kullanicilar.length + ") ---");
+                            for (String k : kullanicilar) System.out.println("  * " + k);
+                            System.out.println("--------------------------------");
                         } else {
                             System.out.println(serverResponse);
                         }
@@ -59,6 +63,8 @@ public class TCPClient {
             while (true) {
                 String mesaj = scanner.nextLine();
                 if (mesaj.equals("EXIT")) {
+                    out.println("LOGOUT|" + userName);
+                    socket.close();
                     break;
                 }
                 out.println("MSG|" + mesaj);

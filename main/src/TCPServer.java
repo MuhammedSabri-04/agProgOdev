@@ -86,6 +86,7 @@ public class TCPServer {
 
                         System.out.println(userName + " sisteme baglandi");
                         broadcast("SYS|" + userName + " sohbete katildi");
+                        broadcastUserList();
 
                     } else if (komut.startsWith("MSG|")) {
                         String mesaj = komut.substring(4);
@@ -111,6 +112,8 @@ public class TCPServer {
                             broadcast("[" + zaman + "] " + userName + ": " + mesaj);
                         }
 
+                    } else if (komut.startsWith("LOGOUT|")) {
+                        break; // finally blogu zaten temizligi yapacak
                     }
 
                 }
@@ -121,6 +124,7 @@ public class TCPServer {
                 if (userName != null) {
                     connectedClients.remove(userName);
                     broadcast("SYS|" + userName + " sistemden ayrildi");
+                    broadcastUserList();
                 }
                 try {
                     clientSocket.close();
@@ -130,10 +134,14 @@ public class TCPServer {
         }
 
         private void broadcast(String mesaj) {
-
             for (PrintWriter clientOut : connectedClients.values()) {
                 clientOut.println(mesaj);
             }
+        }
+
+        private void broadcastUserList() {
+            String liste = String.join(",", connectedClients.keySet());
+            broadcast("USERLIST|" + liste);
         }
 
         private void ozelMesajGonder(String hedef, String mesaj) {
