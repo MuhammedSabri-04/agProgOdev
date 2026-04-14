@@ -45,80 +45,78 @@ public class TCPServer {
         }
     }
 
-    private static class ClientHandler extends Thread{
+    private static class ClientHandler extends Thread {
 
-    private Socket clientSocket;
-    PrintWriter out;
-    BufferedReader in;
-    private String userName;
+        private Socket clientSocket;
+        PrintWriter out;
+        BufferedReader in;
+        private String userName;
 
-    public ClientHandler(Socket socket){
+        public ClientHandler(Socket socket) {
 
-        try{
-            clientSocket=socket;
-            out=new PrintWriter(clientSocket.getOutputStream(),true);
-            in=new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+            try {
+                clientSocket = socket;
+                out = new PrintWriter(clientSocket.getOutputStream(), true);
+                in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
 
-        }catch(IOException e){
-            System.out.println("Hata: "+e.getMessage());
+            } catch (IOException e) {
+                System.out.println("Hata: " + e.getMessage());
+            }
+
         }
 
-    }    
-
         @Override
-        public void run(){
+        public void run() {
 
-            try{
-                
-                while(true){
+            try {
 
-                    String komut=in.readLine();
-                     if(komut==null)
+                while (true) {
+
+                    String komut = in.readLine();
+                    if (komut == null)
                         break;
 
-                    if(komut.startsWith("LOGIN|")){
+                    if (komut.startsWith("LOGIN|")) {
 
-                        userName=komut.substring(6);
+                        userName = komut.substring(6);
 
-                         connectedClients.put(userName, out);
+                        connectedClients.put(userName, out);
 
-                        System.out.println(userName+" sisteme baglandi");
+                        System.out.println(userName + " sisteme baglandi");
                         broadcast("SYS|" + userName + " sohbete katildi");
 
+                    } else if (komut.startsWith("MSG|")) {
+                        String mesaj = komut.substring(4);
 
-                    } 
-                    else if(komut.startsWith("MSG|")){
-                        String mesaj=komut.substring(4);
+                        if (mesaj.startsWith("@")) {
 
-                        if(mesaj.startsWith("@")){
-                            
-                            int spaceIndex=mesaj.indexOf(" ");
-                            if(spaceIndex!=-1){
+                            int spaceIndex = mesaj.indexOf(" ");
+                            if (spaceIndex != -1) {
 
-                                String hedefKullanici=mesaj.substring(1,spaceIndex);
-                                String ozelMesaj=mesaj.substring(spaceIndex+1);
-                                 ozelMesajGonder(hedefKullanici, ozelMesaj);
+                                String hedefKullanici = mesaj.substring(1, spaceIndex);
+                                String ozelMesaj = mesaj.substring(spaceIndex + 1);
+                                ozelMesajGonder(hedefKullanici, ozelMesaj);
 
-                            }else{
+                            } else {
                                 // @ ile basladi ama bosluk bırakmadıysa hata mesajı verme yeri
                                 out.println("Hatali ozel mesaj formati");
 
                             }
 
-                        }else{
+                        } else {
                             // herkese yolla
-                             broadcast(userName + ": " + mesaj);
+                            broadcast(userName + ": " + mesaj);
                         }
 
                     }
 
-                }       
+                }
 
-            }catch(IOException e){
+            } catch (IOException e) {
                 System.out.println(userName + " username ile baglanti koptu " + e.getMessage());
             } finally {
                 if (userName != null) {
-                   connectedClients.remove(userName);
+                    connectedClients.remove(userName);
                     broadcast("SYS|" + userName + " sistemden ayrildi");
                 }
                 try {
@@ -128,10 +126,10 @@ public class TCPServer {
             }
         }
 
-        private void broadcast(String mesaj){
+        private void broadcast(String mesaj) {
 
-             for (PrintWriter clientOut : connectedClients.values()) {
-              clientOut.println(mesaj);
+            for (PrintWriter clientOut : connectedClients.values()) {
+                clientOut.println(mesaj);
             }
         }
 
@@ -144,10 +142,6 @@ public class TCPServer {
                 out.println(hedef + " isimli kullanici bulunamadi: " + hedef);
             }
         }
-}
+    }
 
 }
-
-
-
-

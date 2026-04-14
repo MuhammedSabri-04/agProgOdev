@@ -8,24 +8,29 @@ import java.util.Scanner;
 public class TCPClient {
 
     private static Socket socket;
+
     public static void main(String[] args) {
-        
-        try{
 
-            socket=new Socket("localhost",12345);
+        Scanner scanner = new Scanner(System.in);
 
-            BufferedReader in=new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            PrintWriter out=new PrintWriter(socket.getOutputStream(),true);
+        System.out.print("Port numarasi: ");
+        int port = Integer.parseInt(scanner.nextLine());
 
-            Scanner scanner=new Scanner(System.in);
+        try {
+
+            socket = new Socket("localhost", port);
+
+            BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
 
             System.out.println("Sisteme giris icin lutfen kullanici adi giriniz !!!");
-            String userName=scanner.nextLine();
-            out.println("LOGIN|"+userName);
+            String userName = scanner.nextLine();
+            out.println("LOGIN|" + userName);
 
-            System.out.println("Baglanti kuruldu genel mesaj yazabilirsiniz ozel mesaj icin @<kullaniciAdi> formatini kullanin.");
+            System.out.println(
+                    "Baglanti kuruldu genel mesaj yazabilirsiniz ozel mesaj icin @<kullaniciAdi> formatini kullanin.");
 
-             /// dinleyici thread gelen veriyi
+            /// dinleyici thread gelen veriyi
             Thread listenerThread = new Thread(() -> {
                 try {
                     while (true) {
@@ -58,11 +63,11 @@ public class TCPClient {
                 }
                 out.println("MSG|" + mesaj);
             }
-            
-        }catch(IOException e){
+
+        } catch (IOException e) {
 
             System.out.println(e.getMessage());
-        } 
+        }
 
     }
 
