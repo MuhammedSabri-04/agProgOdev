@@ -52,11 +52,14 @@ public class ConsoleServer {
             System.out.println("Baglanti saglanamadi: " + e.getMessage());
             System.exit(1);
         } finally {
-            try { serverSocket.close(); } catch (IOException e) {}
+            try {
+                serverSocket.close();
+            } catch (IOException e) {
+            }
         }
     }
 
-    // ==================== CHAT HANDLER ====================
+    // CHAT HANDLER
     private static class ClientHandler extends Thread {
 
         private Socket clientSocket;
@@ -79,7 +82,8 @@ public class ConsoleServer {
             try {
                 while (true) {
                     String komut = in.readLine();
-                    if (komut == null) break;
+                    if (komut == null)
+                        break;
 
                     if (komut.startsWith("LOGIN|")) {
                         userName = komut.substring(6);
@@ -100,7 +104,8 @@ public class ConsoleServer {
                                 out.println("Hatali ozel mesaj formati");
                             }
                         } else {
-                            String zaman = LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss dd/MM/yyyy"));
+                            String zaman = LocalDateTime.now()
+                                    .format(DateTimeFormatter.ofPattern("HH:mm:ss dd/MM/yyyy"));
                             broadcast("[" + zaman + "] " + userName + ": " + mesaj);
                         }
 
@@ -117,7 +122,10 @@ public class ConsoleServer {
                     broadcast("SYS|" + userName + " sistemden ayrildi");
                     broadcastUserList();
                 }
-                try { clientSocket.close(); } catch (IOException e) {}
+                try {
+                    clientSocket.close();
+                } catch (IOException e) {
+                }
             }
         }
 
@@ -132,7 +140,7 @@ public class ConsoleServer {
         }
     }
 
-    // ==================== DOSYA SUNUCUSU (port 12346) ====================
+    // DOSYA SUNUCUSU (port 12346)
     private static class FileServer extends Thread {
 
         @Override
@@ -149,12 +157,12 @@ public class ConsoleServer {
 
         private void handle(Socket s) {
             try (DataInputStream dis = new DataInputStream(s.getInputStream());
-                 DataOutputStream dos = new DataOutputStream(s.getOutputStream())) {
+                    DataOutputStream dos = new DataOutputStream(s.getOutputStream())) {
 
-                String komut = dis.readUTF(); // "UPLOAD|username|filename" veya "DOWNLOAD|filename"
+                String komut = dis.readUTF(); // UPLOAD|username|filename veya DOWNLOAD|filename
 
                 if (komut.startsWith("UPLOAD|")) {
-                    // --- YUKLEME ---
+                    // YUKLEME
                     String[] p = komut.split("\\|", 3); // ["UPLOAD", "Ali", "ornek.txt"]
                     String sender = p[1];
                     String filename = p[2];
@@ -165,7 +173,8 @@ public class ConsoleServer {
                         long rem = fileSize;
                         while (rem > 0) {
                             int r = dis.read(buf, 0, (int) Math.min(buf.length, rem));
-                            if (r == -1) break;
+                            if (r == -1)
+                                break;
                             fos.write(buf, 0, r);
                             rem -= r;
                         }
@@ -176,7 +185,7 @@ public class ConsoleServer {
                     System.out.println(sender + " dosya yukledi: " + filename);
 
                 } else if (komut.startsWith("DOWNLOAD|")) {
-                    // --- INDIRME ---
+                    // INDIRME
                     String filename = komut.substring(9);
                     File file = new File("uploads/" + filename);
 

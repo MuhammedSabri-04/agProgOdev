@@ -39,7 +39,7 @@ public class ConsoleClient {
             System.out.println("  Cikis        : EXIT");
             System.out.println("----------------");
 
-            // ---- DİNLEYİCİ THREAD ----
+            // DİNLEYİCİ THREAD
             Thread listenerThread = new Thread(() -> {
                 try {
                     while (true) {
@@ -53,7 +53,8 @@ public class ConsoleClient {
                         } else if (serverResponse.startsWith("USERLIST|")) {
                             String[] kullanicilar = serverResponse.substring(9).split(",");
                             System.out.println("--- Cevrimici (" + kullanicilar.length + ") ---");
-                            for (String k : kullanicilar) System.out.println("  * " + k);
+                            for (String k : kullanicilar)
+                                System.out.println("  * " + k);
                             System.out.println("-----------------------------");
                         } else if (serverResponse.startsWith("FILENOTIFY|")) {
                             String[] p = serverResponse.split("\\|");
@@ -69,7 +70,7 @@ public class ConsoleClient {
             });
             listenerThread.start();
 
-            // ---- GÖNDERİCİ KISIM ----
+            // GÖNDERİCİ KISIM
             while (true) {
                 String mesaj = scanner.nextLine();
                 if (mesaj.equals("EXIT")) {
@@ -92,7 +93,7 @@ public class ConsoleClient {
         }
     }
 
-    // ---- DOSYA GONDER (port 12346) ----
+    // DOSYA GONDER (port 12346)
     private static void sendFile(String dosyaAdi, String userName) {
         File file = new File(dosyaAdi);
         if (!file.exists()) {
@@ -101,8 +102,8 @@ public class ConsoleClient {
             return;
         }
         try (Socket fs = new Socket("localhost", 12346);
-             DataOutputStream dos = new DataOutputStream(fs.getOutputStream());
-             DataInputStream dis = new DataInputStream(fs.getInputStream())) {
+                DataOutputStream dos = new DataOutputStream(fs.getOutputStream());
+                DataInputStream dis = new DataInputStream(fs.getInputStream())) {
 
             dos.writeUTF("UPLOAD|" + userName + "|" + file.getName());
             dos.writeLong(file.length());
@@ -125,13 +126,13 @@ public class ConsoleClient {
         }
     }
 
-    // ---- DOSYA İNDİR (port 12346) ----
+    // DOSYA İNDİR (port 12346)
     private static void downloadFile(String dosyaAdi, String userName) {
         String klasor = "downloads/" + userName;
         new File(klasor).mkdirs();
         try (Socket fs = new Socket("localhost", 12346);
-             DataOutputStream dos = new DataOutputStream(fs.getOutputStream());
-             DataInputStream dis = new DataInputStream(fs.getInputStream())) {
+                DataOutputStream dos = new DataOutputStream(fs.getOutputStream());
+                DataInputStream dis = new DataInputStream(fs.getInputStream())) {
 
             dos.writeUTF("DOWNLOAD|" + dosyaAdi);
             dos.flush();
@@ -148,7 +149,8 @@ public class ConsoleClient {
                 long rem = fileSize;
                 while (rem > 0) {
                     int r = dis.read(buf, 0, (int) Math.min(buf.length, rem));
-                    if (r == -1) break;
+                    if (r == -1)
+                        break;
                     fos.write(buf, 0, r);
                     rem -= r;
                 }
