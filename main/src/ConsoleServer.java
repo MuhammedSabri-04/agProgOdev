@@ -6,8 +6,6 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -15,18 +13,11 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import javax.swing.*;
-import java.awt.*;
 
-public class TCPServer {
+public class ConsoleServer {
 
     private static ServerSocket serverSocket;
     private static Map<String, PrintWriter> connectedClients = new ConcurrentHashMap<>();
-
-    // Tek satirda tarih-saat uretmek icin yardimci metod
-    private static String zaman() {
-        return "[" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss")) + "] ";
-    }
 
     // Hem ChatHandler hem FileServer kullanabilsin diye static
     private static void broadcast(String mesaj) {
@@ -42,64 +33,27 @@ public class TCPServer {
 
     public static void main(String[] args) {
 
-        // ── Swing penceresi
-        JFrame frame = new JFrame("TCP Sunucusu");
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setSize(620, 430);
-        frame.setLayout(new BorderLayout(5, 5));
+        new File("uploads").mkdirs(); // dosya klasoru
 
-        JTextArea logArea = new JTextArea();
-        logArea.setEditable(false);
-        logArea.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
-        JScrollPane scroll = new JScrollPane(logArea);
-        scroll.setBorder(BorderFactory.createTitledBorder("Sunucu Logu"));
-        frame.add(scroll, BorderLayout.CENTER);
+        new FileServer().start(); // port 12346 dosya sunucusu
 
-        JButton startBtn = new JButton("▶  Sunucuyu Baslat (port 12345)");
-        startBtn.setFont(startBtn.getFont().deriveFont(Font.BOLD, 13f));
-        frame.add(startBtn, BorderLayout.SOUTH);
+        try {
+            serverSocket = new ServerSocket(12345);
+            System.out.println("Chat  sunucusu baslatildi  (port 12345)");
+            System.out.println("Dosya sunucusu baslatildi  (port 12346)");
 
-        frame.setLocationRelativeTo(null);
-        frame.setVisible(true);
-
-        // ── System.out → log alanına yönlendir
-        PrintStream ps = new PrintStream(new OutputStream() {
-            public void write(int b) {
-                write(new byte[] { (byte) b }, 0, 1);
+            while (true) {
+                Socket clientSocket = serverSocket.accept();
+                System.out.println("Yeni baglanti: " + clientSocket.getInetAddress());
+                new ClientHandler(clientSocket).start();
             }
 
-            public void write(byte[] b, int off, int len) {
-                String text = new String(b, off, len);
-                SwingUtilities.invokeLater(() -> {
-                    logArea.append(text);
-                    logArea.setCaretPosition(logArea.getDocument().getLength());
-                });
-            }
-        }, true);
-        System.setOut(ps);
-        System.setErr(ps);
-
-        // ── Butona basılınca sunucuyu arka planda başlat
-        startBtn.addActionListener(e -> {
-            startBtn.setEnabled(false);
-            startBtn.setText("■  Sunucu Calisiyor...");
-            new Thread(() -> {
-                new File("uploads").mkdirs();
-                new FileServer().start();
-                try {
-                    serverSocket = new ServerSocket(12345);
-                    System.out.println(zaman() + "Chat  sunucusu baslatildi  (port 12345)");
-                    System.out.println(zaman() + "Dosya sunucusu baslatildi  (port 12346)");
-                    while (true) {
-                        Socket clientSocket = serverSocket.accept();
-                        System.out.println(zaman() + "Yeni baglanti: " + clientSocket.getInetAddress());
-                        new ClientHandler(clientSocket).start();
-                    }
-                } catch (IOException ex) {
-                    System.out.println("Baglanti saglanamadi: " + ex.getMessage());
-                }
-            }).start();
-        });
+        } catch (IOException e) {
+            System.out.println("Baglanti saglanamadi: " + e.getMessage());
+            System.exit(1);
+        } finally {
+            try { serverSocket.close(); } catch (IOException e) {}
+        }
     }
 
     // ==================== CHAT HANDLER ====================
@@ -125,13 +79,12 @@ public class TCPServer {
             try {
                 while (true) {
                     String komut = in.readLine();
-                    if (komut == null)
-                        break;
+                    if (komut == null) break;
 
                     if (komut.startsWith("LOGIN|")) {
                         userName = komut.substring(6);
                         connectedClients.put(userName, out);
-                        System.out.println(zaman() + userName + " sisteme baglandi");
+                        System.out.println(userName + " sisteme baglandi");
                         broadcast("SYS|" + userName + " sohbete katildi");
                         broadcastUserList();
 
@@ -147,8 +100,7 @@ public class TCPServer {
                                 out.println("Hatali ozel mesaj formati");
                             }
                         } else {
-                            String zaman = LocalDateTime.now()
-                                    .format(DateTimeFormatter.ofPattern("HH:mm:ss dd/MM/yyyy"));
+                            String zaman = LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss dd/MM/yyyy"));
                             broadcast("[" + zaman + "] " + userName + ": " + mesaj);
                         }
 
@@ -158,18 +110,14 @@ public class TCPServer {
                 }
 
             } catch (IOException e) {
-                System.out.println(zaman() + userName + " baglantisi koptu: " + e.getMessage());
+                System.out.println(userName + " baglantisi koptu: " + e.getMessage());
             } finally {
                 if (userName != null) {
                     connectedClients.remove(userName);
                     broadcast("SYS|" + userName + " sistemden ayrildi");
                     broadcastUserList();
-                    System.out.println(zaman() + userName + " sistemden ayrildi.");
                 }
-                try {
-                    clientSocket.close();
-                } catch (IOException e) {
-                }
+                try { clientSocket.close(); } catch (IOException e) {}
             }
         }
 
@@ -201,7 +149,7 @@ public class TCPServer {
 
         private void handle(Socket s) {
             try (DataInputStream dis = new DataInputStream(s.getInputStream());
-                    DataOutputStream dos = new DataOutputStream(s.getOutputStream())) {
+                 DataOutputStream dos = new DataOutputStream(s.getOutputStream())) {
 
                 String komut = dis.readUTF(); // "UPLOAD|username|filename" veya "DOWNLOAD|filename"
 
@@ -217,8 +165,7 @@ public class TCPServer {
                         long rem = fileSize;
                         while (rem > 0) {
                             int r = dis.read(buf, 0, (int) Math.min(buf.length, rem));
-                            if (r == -1)
-                                break;
+                            if (r == -1) break;
                             fos.write(buf, 0, r);
                             rem -= r;
                         }
@@ -226,7 +173,7 @@ public class TCPServer {
                     dos.writeUTF("OK");
                     dos.flush();
                     broadcast("FILENOTIFY|" + sender + "|" + filename); // herkese bildir
-                    System.out.println(zaman() + sender + " dosya yukledi: " + filename);
+                    System.out.println(sender + " dosya yukledi: " + filename);
 
                 } else if (komut.startsWith("DOWNLOAD|")) {
                     // --- INDIRME ---
